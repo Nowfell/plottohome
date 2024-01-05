@@ -10,6 +10,7 @@ use App\Models\PropertyUploadedImage;
 use App\Models\PropertyImage;
 use App\Models\Property;
 use Datatables;
+use Exception;
 use Illuminate\Database\QueryException;
 
 class AdminPropertyController extends AdminBaseController
@@ -45,71 +46,75 @@ class AdminPropertyController extends AdminBaseController
      */
     public function store(Request $request)
     {
-        dd($request->all());
-        $request->validate([
-            'property_name' => 'required|unique:properties,name|max:255',
-            'property_price' => 'required|numeric',
-            'property_location' => 'required',
-            'property_category' => 'required',
-            'property_summary' => 'required|min:3|max:150',
-            'property_description' => 'required|min:3|max:150',
-            'property_images.*' => 'required|mimes:jpg,bmp,png,jpeg'
-        ]);
-        
-        $filenametostore = '';
-
-        $property_images = PropertyImage::where('temp','0');
-        $property_images_first = clone $property_images;
-        $property_images_first = $property_images_first->first();
-
-        $property = new Property();
-        $property->featured = isset($request->property_featured) ? true : false;
-        $property->name = $request->property_name;
-        $property->price = $request->property_price;
-        $property->location = $request->property_location;
-        $property->categories = $request->property_category;
-        $property->summary = $request->property_summary;
-        $property->description = $request->property_description;
-        $property->save();
-
-        if($request->hasFile('property_images')) {
-            foreach ($request->property_images as $property_image) {
-                $image = $property_image;
-                //get filename with extension
-                $filenamewithextension = $image->getClientOriginalName();
-
-                //get filename without extension
-                $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
-
-                //get file extension
-                $extension = $image->getClientOriginalExtension();
-
-                //filename to store
-                $filenametostore = $filename.'_'.time().'.'.$extension;
-
-                //Upload File
-                // $image->storeAs('public/Product Images', $filenametostore);
-                $image->move(public_path().'/Property Images/', $filenametostore);
-
-                $property_uploaded_image = new PropertyUploadedImage();
-                $property_uploaded_image->name = $filenametostore;
-                $property_uploaded_image->property_id = $property->id;
-                $property_uploaded_image->save();
+        // dd($request->all());
+        try {
+            $request->validate([
+                'property_name' => 'required|unique:properties,name|max:255',
+                'property_price' => 'required|numeric',
+                'property_location' => 'required',
+                'property_category' => 'required',
+                'property_summary' => 'required|min:3|max:150',
+                'property_description' => 'required|min:3',
+                'property_images.*' => 'required|mimes:jpg,bmp,png,jpeg'
+            ]);
+            
+            $filenametostore = '';
+    
+            $property_images = PropertyImage::where('temp','0');
+            $property_images_first = clone $property_images;
+            $property_images_first = $property_images_first->first();
+    
+            $property = new Property();
+            $property->featured = isset($request->property_featured) ? true : false;
+            $property->name = $request->property_name;
+            $property->price = $request->property_price;
+            $property->location = $request->property_location;
+            $property->categories = $request->property_category;
+            $property->summary = $request->property_summary;
+            $property->description = $request->property_description;
+            $property->save();
+    
+            if($request->hasFile('property_images')) {
+                foreach ($request->property_images as $property_image) {
+                    $image = $property_image;
+                    //get filename with extension
+                    $filenamewithextension = $image->getClientOriginalName();
+    
+                    //get filename without extension
+                    $filename = pathinfo($filenamewithextension, PATHINFO_FILENAME);
+    
+                    //get file extension
+                    $extension = $image->getClientOriginalExtension();
+    
+                    //filename to store
+                    $filenametostore = $filename.'_'.time().'.'.$extension;
+    
+                    //Upload File
+                    // $image->storeAs('public/Product Images', $filenametostore);
+                    $image->move(public_path().'/Property Images/', $filenametostore);
+    
+                    $property_uploaded_image = new PropertyUploadedImage();
+                    $property_uploaded_image->name = $filenametostore;
+                    $property_uploaded_image->property_id = $property->id;
+                    $property_uploaded_image->save();
+                }
             }
-        }
-
-        $property_images = $property_images->get();
-
-        if($property_images_first){
-
-            foreach ($property_images as $property_image) {
-                $property_image->property_id = $property->id;
-                $property_image->temp = '1';
-                $property_image->save();
+    
+            $property_images = $property_images->get();
+    
+            if($property_images_first){
+    
+                foreach ($property_images as $property_image) {
+                    $property_image->property_id = $property->id;
+                    $property_image->temp = '1';
+                    $property_image->save();
+                }
             }
+    
+            return redirect()->route('admin.properties.index')->with('success','Added Property Successfully');
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
         }
-
-        return redirect()->route('admin.properties.index')->with('success','Added Property Successfully');
     }
 
     /**
@@ -154,7 +159,7 @@ class AdminPropertyController extends AdminBaseController
             'property_price' => 'required|numeric',
             'property_location' => 'required',
             'property_category' => 'required',
-            'property_summary' => 'required|min:3|max:150',
+            'property_summary' => 'required|min:3',
             //'property_images' => 'required|mimes:jpg,bmp,png,jpeg'
             'property_images.*' => 'required|mimes:jpg,bmp,png,jpeg'
         ]);

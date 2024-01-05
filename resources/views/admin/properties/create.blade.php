@@ -21,7 +21,7 @@
                 <form class="forms-sample" method="POST" action="{{ route('admin.properties.store') }}" enctype="multipart/form-data">
                     @csrf
                     <div class="form-group form-inline">
-                        <input type="checkbox" class="form-control mr-2" id="propertyFeatured" style="width: 20px;" name="property_featured" />
+                        <input type="checkbox" class="form-control mr-2" id="propertyFeatured" style="width: 20px;" name="property_featured" value="{{ old('property_featured') }}" />
                         <label for="propertyFeatured" style="margin-top: 9px;font-weight: 600;">Featured Property</label>
                     </div>
                   <div class="form-group">
@@ -109,7 +109,10 @@
                       id="propertyDescription"
                       rows="8"
                       placeholder="Property Description"
-                    ></textarea>
+                    >{{ old('property_description') }}</textarea>
+                    @error('property_description')
+                        <div class="alert alert-danger">{{ $message }}</div>
+                    @enderror
                   </div>
                   <div class="form-group">
                     {{-- <label>File upload</label>
