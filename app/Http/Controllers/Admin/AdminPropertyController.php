@@ -47,7 +47,6 @@ class AdminPropertyController extends AdminBaseController
     public function store(Request $request)
     {
         // dd($request->all());
-        try {
             $request->validate([
                 'property_name' => 'required|unique:properties,name|max:255',
                 'property_price' => 'required|numeric',
@@ -112,9 +111,6 @@ class AdminPropertyController extends AdminBaseController
             }
     
             return redirect()->route('admin.properties.index')->with('success','Added Property Successfully');
-        } catch (Exception $e) {
-            Log::error($e->getMessage());
-        }
     }
 
     /**
